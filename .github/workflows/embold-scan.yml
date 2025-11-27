@@ -16,7 +16,6 @@ jobs:
     
     # Define the environment variables that need to be passed securely
     env:
-      EMBOLD_SERVER_URL: http://63.176.47.15:5050
       EMBOLD_REPO_ID: fa1a217767f249b646e5141b31e47350
       
     steps:
@@ -31,26 +30,23 @@ jobs:
       - name: Download and Extract Scanner
         run: |
           echo "Downloading Embold CLI scanner..."
-          curl https://v1.embold.io/nfs/CLI/browserstack-codequality-scanner.tar.gz -o browserstack-codequality-scanner-archive.tar.gz
+          curl ${{ vars.EMBOLD_SCANNER_URL }} -o browserstack-codequality-scanner-archive.tar.gz
           tar xvf browserstack-codequality-scanner-archive.tar.gz
 
       # Step 6: Download the repository configuration file
       - name: Download Repository Configuration
         run: |
-          curl --silent --location --request GET "${{ env.EMBOLD_SERVER_URL }}/api/v1/repositories/${{ env.EMBOLD_REPO_ID }}/scans/config/download" \
-               --header "Authorization: Bearer ${{ secrets.EMBOLD_SCAN_TOKEN }}" \
+          curl --silent --location --request GET "${{ vars.EMBOLD_URL_CPP }}/api/v1/repositories/${{ env.EMBOLD_REPO_ID }}/scans/config/download" \
+               --header "Authorization: Bearer ${{ secrets.EMBOLD_TOKEN_CPP }}" \
                -o repository-configuration.json
 
       # Step 7: Run the Embold analysis scanner
       - name: Run Embold Scanner
-        # Pass the secret token directly to the environment variable used by the script
-        env:
-          EMBOLD_TOKEN: ${{ secrets.EMBOLD_SCAN_TOKEN }}
         run: |
           echo "Starting Embold analysis..."
           ./browserstack-codequality-scanner/bin/embold-scanner analyse \
-            -u ${{ env.EMBOLD_SERVER_URL }} \
-            -t $EMBOLD_TOKEN \
+            -u ${{ vars.EMBOLD_URL_CPP }} \
+            -t ${{ secrets.EMBOLD_TOKEN_CPP }} \
             -r ${{ env.EMBOLD_REPO_ID }} \
             -b . \
             -d ./embold-data \
